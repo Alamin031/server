@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model OTP {
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Domain {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  // user      User[]
+  // createdById Int?
+}
+
+model Asset {
+  id       Int      @id @default(autoincrement())
+  fileType String
+  tags     String[]
+  height   Int?
+  width    Int?
+  slug     String
+  fileName String
+  mimeType String
+  fileSize Int
+  isImage  Boolean
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+}
+
+model User {
+  id                    Int                     @id @default(autoincrement())
+  username              String                  @unique
+  email                 String                  @unique
+  password              String
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  avatar                String?
+  isOTP                 Boolean                 @default(false)
+  isVerified            Boolean                 @default(false)
+  role                  String                  @default("USER")
+  Role                  Role                    @default(USER)
+  UserChatbotAssignment UserChatbotAssignment[]
+}
+
+model Chatbot {
+  id               Int                     @id @default(autoincrement())
+  name             String                  @unique
+  url              String?
+  titel            String?
+  icone            String?
+  isGreetings      Boolean                 @default(false)
+  greetingsSMS     Greetings[]
+  files            File[]
+  chatbotConfigs   ChatbotConfig[]
+  counterQuestions CounterQuestion[]
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  requiredRole     Role                    @default(USER)
+  assignments      UserChatbotAssignment[]
+}
+
+model UserChatbotAssignment {
+  id        Int      @id @default(autoincrement())
+  userEmail String 
+  user      User     @relation(fields: [userEmail], references: [email])
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [id])
+  chatbotId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatbotConfig {
+  id           Int      @id @default(autoincrement())
+  PromptInput  String   @unique
+  PromptOutput String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  chatbot      Chatbot? @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chatbotId    Int?
+}
+
+model CounterQuestion {
+  id        Int      @id @default(autoincrement())
+  text      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chatbot   Chatbot? @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chatbotId Int?
+}
+
+model File {
+  id        Int     @id @default(autoincrement())
+  path      String
+  chatbot   Chatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chatbotId Int
+}
+
+model Greetings {
+  id        Int      @id @default(autoincrement())
+  text      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chatbot   Chatbot  @relation(fields: [chatbotId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  chatbotId Int
+}
